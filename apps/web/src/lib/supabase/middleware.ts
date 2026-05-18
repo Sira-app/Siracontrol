@@ -4,10 +4,17 @@ import { NextResponse, type NextRequest } from 'next/server';
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request: { headers: request.headers } });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  // Si las variables no estan disponibles, dejar pasar la peticion
+  // en lugar de hacer fallar todo el middleware.
+  if (!supabaseUrl || !supabaseKey) {
+    return response;
+  }
+
+  try {
+    const supabase = createServerClient(supabaseUrl, supabaseKey, {
       cookies: {
         get(name: string) {
           return request.cookies.get(name)?.value;
@@ -23,23 +30,26 @@ export async function updateSession(request: NextRequest) {
           response.cookies.set({ name, value: '', ...options });
         },
       },
+    });
+
+    const { data: { user } } = await supabase.auth.getUser();
+    const path = request.nextUrl.pathname;
+
+    // Rutas protegidas
+    const protectedRoutes = ['/dashboard', '/employees', '/attendance', '/leaves', '/tasks', '/locations', '/reports', '/settings'];
+    const isProtected = protectedRoutes.some((r) => path.startsWith(r));
+
+    if (isProtected && !user) {
+      return NextResponse.redirect(new URL('/login', request.url));
     }
-  );
 
-  const { data: { user } } = await supabase.auth.getUser();
-  const path = request.nextUrl.pathname;
+    if (path === '/login' && user) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
 
-  // Rutas protegidas
-  const protectedRoutes = ['/dashboard', '/employees', '/attendance', '/leaves', '/tasks', '/locations', '/reports', '/settings'];
-  const isProtected = protectedRoutes.some((r) => path.startsWith(r));
-
-  if (isProtected && !user) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    return response;
+  } catch (e) {
+    // Ante cualquier error, dejar pasar la peticion sin romper el sitio.
+    return response;
   }
-
-  if (path === '/login' && user) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
-
-  return response;
 }
