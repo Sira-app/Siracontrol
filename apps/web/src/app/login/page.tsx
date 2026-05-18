@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic';
 
 export default function LoginPage() {
   const router = useRouter();
-  const supabase = createBrowserClient();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -20,6 +19,9 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
 
+    // El cliente de Supabase se crea aqui, solo al enviar el formulario.
+    // Asi nunca se ejecuta durante el build (donde no hay variables ni navegador).
+    const supabase = createBrowserClient();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     setLoading(false);
@@ -56,7 +58,7 @@ export default function LoginPage() {
 
           <div>
             <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wide mb-1">
-              Contraseña
+              Contrasena
             </label>
             <input
               type="password"
