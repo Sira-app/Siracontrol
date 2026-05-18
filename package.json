@@ -1,0 +1,24 @@
+{
+  "name": "siracontrol-app",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "turbo run dev --filter=@siracontrol/web",
+    "dev:mobile": "turbo run start --filter=@siracontrol/mobile",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "db:push": "supabase db push",
+    "db:reset": "supabase db reset",
+    "db:types": "supabase gen types typescript --local > packages/database/src/types.ts"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "typescript": "^5.4.0"
+  },
+  "packageManager": "npm@10.5.0"
+}
